@@ -209,7 +209,7 @@ namespace Fusee.Tutorial.Core
             //geometry into the visible range between the near and the far clipping plane.
             //first cube
             // First cube
-            var cube1Model = ModelXForm(new float3(-0.6f, 0, 0), new float3(_pitchCube1, _yawCube1, 0), new float3(0, 0, 0));
+            var cube1Model = ModelXForm(new float3(-0.6f, 0, 0), new float3(_pitchCube1, _yawCube1, 0), new float3(0.5f, 0, 0));
             _xform = projection * view * cube1Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f);
             RC.SetShaderParam(_xformParam, _xform);
             RC.Render(_mesh);
@@ -218,8 +218,8 @@ namespace Fusee.Tutorial.Core
             RC.Render(_mesh);
 
             // Second cube
-            var cube2Model = ModelXForm(new float3(0.6f, 0, 0), new float3(_pitchCube2, _yawCube2, 0), new float3(0, 0, 0));
-            _xform = projection * view * cube2Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f); ;
+            var cube2Model = ModelXForm(new float3(0.6f, 0, 0), new float3(_pitchCube2, _yawCube2, 0), new float3(-0.5f, 0, 0));
+            _xform = projection * float4x4.CreateTranslation(-0.2f, 0 ,0) * view * cube2Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f);
             RC.SetShaderParam(_xformParam, _xform);
             RC.Render(_mesh);
 
