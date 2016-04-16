@@ -1,0 +1,16 @@
+Investigate how the vertice's coordinates relate to pixel positions within the output window.
+
+- What are the smallest and largest x- and y-values for vertices that can be displayed within the output window?
+	The smallest x- and y- value for vertices that can be displayed within the output window is -1.
+	The largest x- and y- value for vertices that can be displayed within the output window is 1.
+
+- What happens to your geometry if you re-size the output window? 
+	Because of the Clip Plane the geometry gets scaled too.
+
+- What happens if you change the z-values of your vertices (currently set to 0)?
+	If the z-value is between -1 and 1 nothing will happen (i guess because the opbject is still inside the near and far clipping plane)
+	If the z-value is bigger then 1 the specific part of the triangle gets cut out (object is outside of clipping plane)
+
+- What happens if you change the order of the indices in the Triangles array? Try to explain your observation.
+	If you just change the order of the indices output looks the same.
+	If you change the order of the single vertex points an error occurs: the vertext doesnt get drawn
