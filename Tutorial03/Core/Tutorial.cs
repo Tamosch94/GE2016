@@ -164,6 +164,10 @@ namespace Fusee.Tutorial.Core
         // RenderAFrame is called once a frame
         public override void RenderAFrame()
         {
+            // create perspective step 1 variables
+            var aspectRatio = Width / (float)Height;
+            var projection = float4x4.CreatePerspectiveFieldOfView(3.141592f * 0.25f, aspectRatio, 0.01f, 20);
+
             // Clear the backbuffer
             RC.Clear(ClearFlags.Color | ClearFlags.Depth);
 
@@ -171,9 +175,14 @@ namespace Fusee.Tutorial.Core
             if (Mouse.LeftButton || Touch.GetTouchActive(TouchPoints.Touchpoint_0))
                 _alpha -= speed.x * 0.0001f;
 
+            // use projection-varibale in xform
             //create the calues for the xform matrice and scale the Cube so it dits into the window
-            _xform = float4x4.CreateRotationX(_alpha) * float4x4.CreateRotationY(_alpha) * float4x4.CreateScale(0.5f); 
-       
+            //when you change the order of these operations the outxome changes because of appliancation of these values to the vertex
+            // composition of xform in renderaframe better because of higher flexibility of the possible Matrix operations in renderaframe 
+            // Furthermore built in operations in c# might not be able in GLSL
+            //Note that we needed to insert a translation about 3 units along the z-axis. Understand that this is necessary to move the 
+            //geometry into the visible range between the near and the far clipping plane.
+            _xform = projection * float4x4.CreateTranslation(0, 0, 3) * float4x4.CreateRotationX(_alpha) * float4x4.CreateRotationY(_alpha) * float4x4.CreateScale(0.5f); 
 
             RC.SetShaderParam(_xformParam, _xform);
 
