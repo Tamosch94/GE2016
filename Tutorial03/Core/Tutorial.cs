@@ -198,6 +198,8 @@ namespace Fusee.Tutorial.Core
             _pitchCube1 += Keyboard.WSAxis * 0.1f;
             _yawCube2 += Keyboard.LeftRightAxis * 0.1f;
             _pitchCube2 += Keyboard.UpDownAxis * 0.1f;
+
+          
             // use projection-varibale in xform
             //create the calues for the xform matrice and scale the Cube so it dits into the window
             //when you change the order of these operations the outxome changes because of appliancation of these values to the vertex
@@ -208,7 +210,7 @@ namespace Fusee.Tutorial.Core
             //first cube
             // First cube
             var cube1Model = ModelXForm(new float3(-0.6f, 0, 0), new float3(_pitchCube1, _yawCube1, 0), new float3(0, 0, 0));
-            _xform = projection * view * cube1Model * float4x4.CreateScale(0.5f);
+            _xform = projection * view * cube1Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f);
             RC.SetShaderParam(_xformParam, _xform);
             RC.Render(_mesh);
             RC.SetShaderParam(_xformParam, _xform);
@@ -217,7 +219,7 @@ namespace Fusee.Tutorial.Core
 
             // Second cube
             var cube2Model = ModelXForm(new float3(0.6f, 0, 0), new float3(_pitchCube2, _yawCube2, 0), new float3(0, 0, 0));
-            _xform = projection * view * cube2Model * float4x4.CreateScale(0.5f);
+            _xform = projection * view * cube2Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f); ;
             RC.SetShaderParam(_xformParam, _xform);
             RC.Render(_mesh);
 
