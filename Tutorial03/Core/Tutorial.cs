@@ -18,10 +18,10 @@ namespace Fusee.Tutorial.Core
         private float _alpha;
         private IShaderParam _betaParam;
         private float _beta;
-        private float _yawCube1;
-        private float _pitchCube1;
-        private float _yawCube2;
-        private float _pitchCube2;
+        private float _yawBase;
+        private float _pitchUpperArm;
+        private float _pitchForeArm;
+
 
         private const string _vertexShader = @"
             attribute vec3 fuVertex;
@@ -184,20 +184,30 @@ namespace Fusee.Tutorial.Core
             // create perspective step 1 variables
             var aspectRatio = Width / (float)Height;
             var projection = float4x4.CreatePerspectiveFieldOfView(3.141592f * 0.25f, aspectRatio, 0.01f, 20);
-            var view = float4x4.CreateTranslation(0, 0, 3) * float4x4.CreateRotationY(_alpha) * float4x4.CreateRotationX(_beta);
+            var view = float4x4.CreateTranslation(0, -0.6f, 3) * float4x4.CreateRotationY(_alpha) * float4x4.CreateRotationX(_beta);
 
             // Clear the backbuffer
             RC.Clear(ClearFlags.Color | ClearFlags.Depth);
 
             float2 speed = Mouse.Velocity + Touch.GetVelocity(TouchPoints.Touchpoint_0);
             if (Mouse.LeftButton || Touch.GetTouchActive(TouchPoints.Touchpoint_0))
+            {
                 _alpha -= speed.x * 0.0001f;
                 _beta -= speed.y * 0.0001f;
+            }
 
-            _yawCube1 += Keyboard.ADAxis * 0.1f;
-            _pitchCube1 += Keyboard.WSAxis * 0.1f;
-            _yawCube2 += Keyboard.LeftRightAxis * 0.1f;
-            _pitchCube2 += Keyboard.UpDownAxis * 0.1f;
+            if (_beta > 3.141592f/2)
+            {
+                _beta = 3.141592f / 2;
+            }
+            if (_beta < -3.141592f / 2)
+            {    _beta = -3.141592f / 2;}
+
+
+            _yawBase += Keyboard.ADAxis * 0.1f;
+            _yawBase += Keyboard.LeftRightAxis * 0.1f;
+            _pitchUpperArm += Keyboard.WSAxis * 0.1f;
+            _pitchForeArm += Keyboard.UpDownAxis * 0.1f;
 
           
             // use projection-varibale in xform
@@ -208,18 +218,30 @@ namespace Fusee.Tutorial.Core
             //Note that we needed to insert a translation about 3 units along the z-axis. Understand that this is necessary to move the 
             //geometry into the visible range between the near and the far clipping plane.
             //first cube
-            // First cube
-            var cube1Model = ModelXForm(new float3(-0.6f, 0, 0), new float3(_pitchCube1, _yawCube1, 0), new float3(0.5f, 0, 0));
-            _xform = projection * view * cube1Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f);
+            // First cube (GROUND)
+            var groundModel = ModelXForm(new float3(0, 0, 0), new float3(0, _yawBase, 0), new float3(0, 0, 0));
+            _xform = projection * view * groundModel * float4x4.CreateScale(0.5f, 0.1f, 0.5f);
             RC.SetShaderParam(_xformParam, _xform);
             RC.Render(_mesh);
             RC.SetShaderParam(_xformParam, _xform);
 
             RC.Render(_mesh);
 
-            // Second cube
-            var cube2Model = ModelXForm(new float3(0.6f, 0, 0), new float3(_pitchCube2, _yawCube2, 0), new float3(-0.5f, 0, 0));
-            _xform = projection * float4x4.CreateTranslation(-0.2f, 0 ,0) * view * cube2Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f);
+            //(BASE)
+            var baseModel = ModelXForm(new float3(0, 0, 0), new float3(0, 0, 0), new float3(0, 0, 0));
+            _xform = projection * view * float4x4.CreateTranslation(0, 0.5f, 0) * groundModel * baseModel * float4x4.CreateScale(0.1f, 0.5f, 0.1f);
+            RC.SetShaderParam(_xformParam, _xform);
+            RC.Render(_mesh);
+
+            //Second cube (UPPERARM)
+            var upperArmModel = ModelXForm(new float3(0.2f, 1.2f, 0), new float3(_pitchUpperArm, 0 , 0), new float3(-0.2f, -0.3f, 0));
+            _xform =projection* view * groundModel * baseModel * upperArmModel * float4x4.CreateScale(0.1f, 0.5f, 0.1f); 
+            RC.SetShaderParam(_xformParam, _xform);
+            RC.Render(_mesh);
+            
+            //Second cube (FOREARM)
+            var foreArmModel = ModelXForm(new float3(-0.2f, 0.8f, 0), new float3(_pitchForeArm, 0, 0), new float3(0, -0.3f, 0));
+            _xform = projection *  float4x4.CreateTranslation(0, 0 ,0) * view  * groundModel * baseModel * upperArmModel * foreArmModel * float4x4.CreateScale(0.1f, 0.5f, 0.1f); 
             RC.SetShaderParam(_xformParam, _xform);
             RC.Render(_mesh);
 
