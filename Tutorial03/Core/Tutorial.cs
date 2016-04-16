@@ -16,6 +16,8 @@ namespace Fusee.Tutorial.Core
         private float4x4 _xform;
         private IShaderParam _alphaParam;
         private float _alpha;
+        private IShaderParam _betaParam;
+        private float _beta;
 
         private const string _vertexShader = @"
             attribute vec3 fuVertex;
@@ -154,6 +156,9 @@ namespace Fusee.Tutorial.Core
             _alphaParam = RC.GetShaderParam(shader, "alpha");
             _alpha = 0;
 
+            _betaParam = RC.GetShaderParam(shader, "beta");
+            _beta = 0;
+
             _xformParam = RC.GetShaderParam(shader, "xform");
             _xform = float4x4.Identity;
 
@@ -174,6 +179,7 @@ namespace Fusee.Tutorial.Core
             float2 speed = Mouse.Velocity + Touch.GetVelocity(TouchPoints.Touchpoint_0);
             if (Mouse.LeftButton || Touch.GetTouchActive(TouchPoints.Touchpoint_0))
                 _alpha -= speed.x * 0.0001f;
+                _beta -= speed.y * 0.0001f;
 
             // use projection-varibale in xform
             //create the calues for the xform matrice and scale the Cube so it dits into the window
@@ -182,10 +188,21 @@ namespace Fusee.Tutorial.Core
             // Furthermore built in operations in c# might not be able in GLSL
             //Note that we needed to insert a translation about 3 units along the z-axis. Understand that this is necessary to move the 
             //geometry into the visible range between the near and the far clipping plane.
-            _xform = projection * float4x4.CreateTranslation(0, 0, 3) * float4x4.CreateRotationX(_alpha) * float4x4.CreateRotationY(_alpha) * float4x4.CreateScale(0.5f); 
-
+            //first cube
+            _xform = projection
+                * float4x4.CreateTranslation(0, 0, 3) * float4x4.CreateRotationY(_alpha) * float4x4.CreateRotationX(_beta)
+                * float4x4.CreateTranslation(-0.6f, 0, 0) * float4x4.CreateScale(0.5f);
+            RC.SetShaderParam(_xformParam, _xform);
+            RC.Render(_mesh);
             RC.SetShaderParam(_xformParam, _xform);
 
+            RC.Render(_mesh);
+
+            // Second cube
+            _xform = projection
+                * float4x4.CreateTranslation(0, 0, 3) * float4x4.CreateRotationY(_alpha) * float4x4.CreateRotationX(_beta)
+                * float4x4.CreateTranslation(0.6f, 0, 0) * float4x4.CreateScale(0.5f);
+            RC.SetShaderParam(_xformParam, _xform);
             RC.Render(_mesh);
 
             // Swap buffers: Show the contents of the backbuffer (containing the currently rendered farame) on the front buffer.
