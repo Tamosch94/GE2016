@@ -11,10 +11,17 @@ namespace Fusee.Tutorial.Core
     public class Tutorial : RenderCanvas
     {
         private Mesh _mesh;
+        //declare Matrix variable
+        private IShaderParam _xformParam;
+        private float4x4 _xform;
+        private IShaderParam _alphaParam;
+        private float _alpha;
+
         private const string _vertexShader = @"
             attribute vec3 fuVertex;
             attribute vec3 fuNormal;
-            uniform float alpha;
+            //remove alpha through matrix in the headline of FUSEE
+            uniform mat4 xform;
             varying vec3 modelpos;
             varying vec3 normal;
 
@@ -22,12 +29,8 @@ namespace Fusee.Tutorial.Core
             {
                 modelpos = fuVertex;
                 normal = fuNormal;
-                float s = sin(alpha);
-                float c = cos(alpha);
-                gl_Position = vec4(0.5 * (fuVertex.x * c - fuVertex.z * s), 
-                                   0.5 *  fuVertex.y, 
-                                   0.5 * (fuVertex.x * s + fuVertex.z * c),
-                                   1.0);
+                
+                gl_Position = xform * vec4(fuVertex, 1.0);
             }";
 
         private const string _pixelShader = @"
@@ -43,8 +46,7 @@ namespace Fusee.Tutorial.Core
             }";
 
 
-        private IShaderParam _alphaParam;
-        private float _alpha;
+       
 
         // Init is called on startup. 
         public override void Init()
@@ -152,6 +154,9 @@ namespace Fusee.Tutorial.Core
             _alphaParam = RC.GetShaderParam(shader, "alpha");
             _alpha = 0;
 
+            _xformParam = RC.GetShaderParam(shader, "xform");
+            _xform = float4x4.Identity;
+
             // Set the clear color for the backbuffer
             RC.ClearColor = new float4(0.1f, 0.3f, 0.2f, 1);
         }
@@ -164,9 +169,13 @@ namespace Fusee.Tutorial.Core
 
             float2 speed = Mouse.Velocity + Touch.GetVelocity(TouchPoints.Touchpoint_0);
             if (Mouse.LeftButton || Touch.GetTouchActive(TouchPoints.Touchpoint_0))
-                _alpha += speed.x * 0.0001f;
+                _alpha -= speed.x * 0.0001f;
 
-            RC.SetShaderParam(_alphaParam, _alpha);
+            //create the calues for the xform matrice and scale the Cube so it dits into the window
+            _xform = float4x4.CreateRotationX(_alpha) * float4x4.CreateRotationY(_alpha) * float4x4.CreateScale(0.5f); 
+       
+
+            RC.SetShaderParam(_xformParam, _xform);
 
             RC.Render(_mesh);
 
