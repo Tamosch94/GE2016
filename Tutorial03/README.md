@@ -5,6 +5,7 @@
  - Understand why we need 4x4 matrices (and not 3x3) to perform transformations.
  - Grasp the indexing scheme in `Mesh` and how edges in geometry require that vertices
    are passed through the vertex shader more than once.
+ - Get a first glance how object hierarchies are built using composite transformations
  
 ##Get that 3D Look
 In the tutorials so far the generated output looked rather flat. Even the 3D-tetrahedron in [Tutorial 02] (../Tutorial02) really looked rather
@@ -160,9 +161,9 @@ The advantage in the second line is: if you have not only one v but hundrets of 
 way, you save a lot of calculations.
 
 So let's say a big thank you to the inventors of matrix calculation. BUT - there's one tiny drawback: The building blocks we want to
-use to build our composite resulting transformations are:
+use to build our composite resulting transformation are:
  - Translation (changing positions)
- - Rotations
+ - Rotation
  - Scale (make objects bigger or smaller)
  - Projection (here: perspective projection making far objects appear small)
  
@@ -226,7 +227,7 @@ Instead of handling ```alpha``` as a shader variable from the 'outside' C# code,
    ```
    Note that we changed the operation on ```_alpha``` from ```+=``` to ```-=```! This is due to the fact that 
    from now on we will be using FUSEE'`s matrix calculation methods which operate on a left-handed coordinate
-   system instead of a right-handed coordinate system implicitely assumed by OpenGL.
+   system instead of a right-handed coordinate system implicitly assumed by OpenGL.
 
 Build and run these changes and make sure that the output is the same as before.   
    
@@ -234,7 +235,7 @@ Build and run these changes and make sure that the output is the same as before.
  - Understand the changes applied above - Note how we now have one single matrix (```xform```) which we can use to
    apply any tranformation to (given that the transformation can be expressed as a matrix).
  - Try to compose ```_xform``` out of more transformations, probably also controlled by input axes. See which other
-   transformations can be created by the various ```float.Create...``` methods.
+   transformations can be created by the various ```float4x4.Create...``` methods.
  - Try to change the order of the individual transformations your ```_xform``` is composed of and explain what happens.
    In which order are the transformations applied to a vertex?
  - Explain why it's better to compose ```_xform``` in the C# ```RenderAFrame()``` method than composing it in the 
@@ -447,9 +448,13 @@ As a result you should be able to control the overall rotation of the arm using 
 both bars using the arrow keys.
 
 ![Arm example] (_images/Arms.png)
+
+ - Visit the [result as web application]
+  (https://cdn.rawgit.com/griestopf/Fusee.Tutorial/2c0750f/Tutorial03Completed/out/Fusee.Tutorial.Web.html)
+  (Ctrl-Click or Long-Press to open in new tab).
  
-See [Tutorial.cs] (../Tutorial03Completed/Core/Tutorial.cs) int the [Tutorial03 Completed] (../Tutorial03Completed) folder for 
-the overal state so far.
+ - See [Tutorial.cs] (../Tutorial03Completed/Core/Tutorial.cs) in the [Tutorial03 Completed] (../Tutorial03Completed) folder for 
+   the overall state so far.
    
 ##Exercise
  - Create a little robot made out of a base, an upper arm and a forearm. Use two cubes to build the base, and one cube each for 
