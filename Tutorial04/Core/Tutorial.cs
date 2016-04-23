@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Fusee.Base.Common;
 using Fusee.Base.Core;
 using Fusee.Engine.Common;
@@ -14,18 +15,21 @@ namespace Fusee.Tutorial.Core
     [FuseeApplication(Name = "Tutorial Example", Description = "The official FUSEE Tutorial.")]
     public class Tutorial : RenderCanvas
     {
+        
+
         private Mesh _mesh;
         private const string _vertexShader = @"
             attribute vec3 fuVertex;
             attribute vec3 fuNormal;
-            uniform mat4 xform;
+            uniform mat4 FUSEE_MVP;
+            uniform mat4 FUSEE_MV;
             varying vec3 modelpos;
             varying vec3 normal;
             void main()
             {
                 modelpos = fuVertex;
-                normal = fuNormal;
-                gl_Position = xform * vec4(fuVertex, 1.0);
+                normal = normalize(mat3(FUSEE_MV) * fuNormal);
+                gl_Position = FUSEE_MVP * vec4(fuVertex, 1.0);
             }";
 
         private const string _pixelShader = @"
@@ -34,15 +38,14 @@ namespace Fusee.Tutorial.Core
             #endif
             varying vec3 modelpos;
             varying vec3 normal;
+            uniform vec3 albedo;
 
             void main()
             {
-                gl_FragColor = vec4(normal*0.5 + 0.5, 1);
+                float intensity = dot(normal, vec3(0, 0, -1));
+                gl_FragColor = vec4(intensity * albedo, 1);
             }";
 
-
-        private IShaderParam _xformParam;
-        private float4x4 _xform;
         private float _alpha;
         private float _beta;
 
@@ -50,29 +53,74 @@ namespace Fusee.Tutorial.Core
         private float _pitchCube1;
         private float _yawCube2;
         private float _pitchCube2;
+        private IShaderParam _albedoParam;
+        private SceneOb _root;
 
-        // Init is called on startup. 
-        public override void Init()
+        void RenderSceneOb(SceneOb so, float4x4 modelView)
         {
-            // Load the scene file "Cube.fus"
-            SceneContainer sc = AssetStorage.Get<SceneContainer>("Cube.fus");
-            
-            // Extract the 'First' object of type 'MeshComponent' found in 'sc'`s list of 'Children' without 
-            // further specifying any search criterion ('c => true' means: any found MeshComponent will do).
-            MeshComponent mc = sc.Children.FindComponents<MeshComponent>(c => true).First();
+            modelView = modelView * ModelXForm(so.Pos, so.Rot, so.Pivot) * float4x4.CreateScale(so.Scale);
+            if (so.Mesh != null)
+            {
+                RC.ModelView = modelView * float4x4.CreateScale(so.ModelScale);
+                RC.SetShaderParam(_albedoParam, so.Albedo);
+                RC.Render(so.Mesh);
+            }
 
-            // Generate a mesh from the MeshComponent's vertices, normals and triangles.
-            _mesh = new Mesh
+            if (so.Children != null)
+            {
+                foreach (var child in so.Children)
+                {
+                    RenderSceneOb(child, modelView);
+                }
+            }
+        }
+        // helper method that allows us to load a Mesh with a single method call.
+        public static Mesh LoadMesh(string assetName)
+        {
+            SceneContainer sc = AssetStorage.Get<SceneContainer>(assetName);
+            MeshComponent mc = sc.Children.FindComponents<MeshComponent>(c => true).First();
+            return new Mesh
             {
                 Vertices = mc.Vertices,
                 Normals = mc.Normals,
                 Triangles = mc.Triangles
             };
-
+        }
+        // Init is called on startup. 
+        public override void Init()
+        {
             var shader = RC.CreateShader(_vertexShader, _pixelShader);
             RC.SetShader(shader);
-            _xformParam = RC.GetShaderParam(shader, "xform");
-            _xform = float4x4.Identity;
+            _albedoParam = RC.GetShaderParam(shader, "albedo");
+
+            // Load some meshes
+            Mesh cone = LoadMesh("Cone.fus");
+            Mesh cube = LoadMesh("Cube.fus");
+            Mesh cylinder = LoadMesh("Cylinder.fus");
+            Mesh pyramid = LoadMesh("Pyramid.fus");
+            Mesh sphere = LoadMesh("Sphere.fus");
+
+            // Setup a list of objects
+            _root = new SceneOb
+            {
+                Children = new List<SceneOb>(new[]
+                {
+                    // Body
+                    new SceneOb { Mesh = cube,     Pos = new float3(0, 2.75f, 0),     ModelScale = new float3(0.5f, 1, 0.25f),      },
+                    // Legs
+                    new SceneOb { Mesh = cylinder, Pos = new float3(-0.25f, 1, 0),    ModelScale = new float3(0.15f, 1, 0.15f),     },
+                    new SceneOb { Mesh = cylinder, Pos = new float3( 0.25f, 1, 0),    ModelScale = new float3(0.15f, 1, 0.15f),     },
+                    // Shoulders
+                    new SceneOb { Mesh = sphere,   Pos = new float3(-0.75f, 3.5f, 0), ModelScale = new float3(0.25f, 0.25f, 0.25f), },
+                    new SceneOb { Mesh = sphere,   Pos = new float3( 0.75f, 3.5f, 0), ModelScale = new float3(0.25f, 0.25f, 0.25f), },
+                    // Arms
+                    new SceneOb { Mesh = cylinder, Pos = new float3(-0.75f, 2.5f, 0), ModelScale = new float3(0.15f, 1, 0.15f),     },
+                    new SceneOb { Mesh = cylinder, Pos = new float3( 0.75f, 2.5f, 0), ModelScale = new float3(0.15f, 1, 0.15f),     },
+                    // Head
+                    new SceneOb { Mesh = sphere,   Pos = new float3(0, 4.2f, 0),      ModelScale = new float3(0.35f, 0.5f, 0.35f),  },
+                })
+            };
+
 
             // Set the clear color for the backbuffer
             RC.ClearColor = new float4(1, 1, 1, 1);
@@ -87,6 +135,7 @@ namespace Fusee.Tutorial.Core
                    *float4x4.CreateTranslation(-pivot);
         }
 
+        
         // RenderAFrame is called once a frame
         public override void RenderAFrame()
         {
@@ -107,20 +156,10 @@ namespace Fusee.Tutorial.Core
 
             // Setup matrices
             var aspectRatio = Width / (float)Height;
-            var projection = float4x4.CreatePerspectiveFieldOfView(3.141592f * 0.25f, aspectRatio, 0.01f, 20);
-            var view = float4x4.CreateTranslation(0, 0, 3)*float4x4.CreateRotationY(_alpha)*float4x4.CreateRotationX(_beta);
+            RC.Projection = float4x4.CreatePerspectiveFieldOfView(3.141592f * 0.25f, aspectRatio, 0.01f, 20);
+            float4x4 view = float4x4.CreateTranslation(0, 0, 8) * float4x4.CreateRotationY(_alpha) * float4x4.CreateRotationX(_beta) * float4x4.CreateTranslation(0, -2f, 0);
 
-            // First cube
-            var cube1Model = ModelXForm(new float3(-0.5f, 0, 0), new float3(_pitchCube1, _yawCube1, 0), new float3(0, 0, 0));
-            _xform = projection * view * cube1Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f);
-            RC.SetShaderParam(_xformParam, _xform);
-            RC.Render(_mesh);
-
-            // Second cube
-            var cube2Model = ModelXForm(new float3(1, 0, 0), new float3(_pitchCube2, _yawCube2, 0), new float3(-0.5f, 0, 0));
-            _xform = projection * view * cube1Model * cube2Model * float4x4.CreateScale(0.5f, 0.1f, 0.1f);
-            RC.SetShaderParam(_xformParam, _xform);
-            RC.Render(_mesh);
+            RenderSceneOb(_root, view);
 
             // Swap buffers: Show the contents of the backbuffer (containing the currently rendered farame) on the front buffer.
             Present();
