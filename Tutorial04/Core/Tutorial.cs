@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Fusee.Base.Common;
 using Fusee.Base.Core;
@@ -55,6 +56,11 @@ namespace Fusee.Tutorial.Core
         private float _pitchCube2;
         private IShaderParam _albedoParam;
         private SceneOb _root;
+        private SceneOb _rightArmMesh;
+        private SceneOb _leftArmMesh;
+        private float _armPitchRight;
+        private float _armPitchLeft;
+        private SceneOb _bodyMesh;
 
         void RenderSceneOb(SceneOb so, float4x4 modelView)
         {
@@ -86,6 +92,26 @@ namespace Fusee.Tutorial.Core
                 Triangles = mc.Triangles
             };
         }
+
+        public static SceneOb FindSceneOb(SceneOb so, string name)
+        {
+            if (so.Children != null)
+            {
+
+                foreach (var child in so.Children)
+                {
+                    if (child.nameOfMesh != null && child.nameOfMesh.Equals(name))
+                        return child;
+
+                    var grandChild = FindSceneOb(child, name);
+
+                    if (grandChild != null)
+                        return grandChild;
+                }
+            }
+            return null; // not found
+        
+    }
         // Init is called on startup. 
         public override void Init()
         {
@@ -106,16 +132,100 @@ namespace Fusee.Tutorial.Core
                 Children = new List<SceneOb>(new[]
                 {
                     // Body
-                    new SceneOb { Mesh = cube,     Pos = new float3(0, 2.75f, 0),     ModelScale = new float3(0.5f, 1, 0.25f),      },
-                    // Legs
-                    new SceneOb { Mesh = cylinder, Pos = new float3(-0.25f, 1, 0),    ModelScale = new float3(0.15f, 1, 0.15f),     },
-                    new SceneOb { Mesh = cylinder, Pos = new float3( 0.25f, 1, 0),    ModelScale = new float3(0.15f, 1, 0.15f),     },
-                    // Shoulders
-                    new SceneOb { Mesh = sphere,   Pos = new float3(-0.75f, 3.5f, 0), ModelScale = new float3(0.25f, 0.25f, 0.25f), },
-                    new SceneOb { Mesh = sphere,   Pos = new float3( 0.75f, 3.5f, 0), ModelScale = new float3(0.25f, 0.25f, 0.25f), },
-                    // Arms
-                    new SceneOb { Mesh = cylinder, Pos = new float3(-0.75f, 2.5f, 0), ModelScale = new float3(0.15f, 1, 0.15f),     },
-                    new SceneOb { Mesh = cylinder, Pos = new float3( 0.75f, 2.5f, 0), ModelScale = new float3(0.15f, 1, 0.15f),     },
+                    new SceneOb { Mesh = cube,     Pos = new float3(0, 2.75f, 0),     ModelScale = new float3(0.5f, 1, 0.25f), nameOfMesh = "bodyMesh",},
+                    
+                    // rightLeg
+                    new SceneOb
+                    {
+                        Mesh = cylinder, Pos = new float3(-0.25f, 1, 0),    ModelScale = new float3(0.15f, 1, 0.15f), nameOfMesh = "rightLegMesh",   
+                        Children = new List<SceneOb>(new[]
+                        {
+                            new SceneOb { Mesh = pyramid, Pos = new float3(0, -1f, -0.1f),    ModelScale = new float3(0.25f, 0.1f, 0.6f), Albedo  = new float3(0.2f, 0.2f, 0.2f), nameOfMesh = "rightFootMesh" },
+                        })
+                    },
+
+                    //leftLeg
+                    new SceneOb
+                    {
+                        Mesh = cylinder, Pos = new float3( 0.25f, 1, 0),    ModelScale = new float3(0.15f, 1, 0.15f), nameOfMesh = "leftLegMesh",
+                        Children = new List<SceneOb>(new[]
+                        {
+                            //leftFoot
+                            new SceneOb
+                            {
+                                Mesh = pyramid, Pos = new float3(0, -1, -0.1f),    ModelScale = new float3(0.25f, 0.1f, 0.6f), Albedo  = new float3(0.2f, 0.2f, 0.2f), nameOfMesh = "leftFootMesh"
+                            },
+                        })
+                    },
+                   // rightShoulder
+                    new SceneOb
+                    {
+                        Mesh = sphere,   Pos = new float3(-0.75f, 3.5f, 0), ModelScale = new float3(0.25f, 0.25f, 0.25f), nameOfMesh = "righthoulderMesh",
+                         Children = new List<SceneOb>(new[]
+                        {
+                            //rightArm
+                            new SceneOb
+                            {
+                                Mesh = cylinder, Pos = new float3(0, -1f, 0), ModelScale = new float3(0.15f, 1, 0.15f), Pivot = new float3(0, 1f, 0), nameOfMesh = "rightArmMesh",
+                                 Children = new List<SceneOb>(new[]
+                                {
+                                     //rightelbow
+                                    new SceneOb
+                                    {
+                                        Mesh = sphere,   Pos = new float3(0, 0, 0), ModelScale = new float3(0.25f, 0.25f, 0.25f), Albedo  = new float3(0.2f, 0.5f, 0.2f),
+                                         Children = new List<SceneOb>(new[]
+                                         {
+                                             //rightHand
+                                             new SceneOb
+                                             {
+                                                Mesh = sphere, Pos = new float3( 0, -1f, 0), ModelScale = new float3(0.25f, 0.5f, 0.25f), nameOfMesh = "rightHandMesh",
+
+                                             }
+
+                                         }),
+
+                                    }
+                                }),
+                                
+
+                            },
+                         })
+                    },
+
+                    //leftShoulder
+                    new SceneOb
+                    {
+                        Mesh = sphere,   Pos = new float3( 0.75f, 3.5f, 0), ModelScale = new float3(0.25f, 0.25f, 0.25f), nameOfMesh = "leftShoulderMesh",
+                         Children = new List<SceneOb>(new[]
+                        {
+                            //leftArm
+                            new SceneOb
+                            {
+                                Mesh = cylinder, Pos = new float3( 0, -1f, 0), ModelScale = new float3(0.15f, 1, 0.15f), Pivot = new float3(0, 1f, 0), nameOfMesh = "leftArmMesh",
+                                Children = new List<SceneOb>(new[]
+                                {    
+                                    //leftElbow
+                                    new SceneOb
+                                    {
+                                        Mesh = sphere,   Pos = new float3( 0, 0f, 0), ModelScale = new float3(0.25f, 0.25f, 0.25f), Albedo  = new float3(0.2f, 0.5f, 0.2f),
+                                            Children = new List<SceneOb>(new[]
+                                        {
+                                            //leftHand
+                                            new SceneOb
+                                            {
+                                                Mesh = sphere, Pos = new float3( 0, -1f, 0), ModelScale = new float3(0.25f, 0.5f, 0.25f), nameOfMesh = "leftHandMesh",
+
+
+                                            }
+                                        }),
+                                    },
+                                }),
+
+                            },
+
+                         })
+
+                    },                    
                     // Head
                     new SceneOb { Mesh = sphere,   Pos = new float3(0, 4.2f, 0),      ModelScale = new float3(0.35f, 0.5f, 0.35f),  },
                 })
@@ -124,6 +234,11 @@ namespace Fusee.Tutorial.Core
 
             // Set the clear color for the backbuffer
             RC.ClearColor = new float4(1, 1, 1, 1);
+
+            // look for _root children name if no errors occur = success
+           _leftArmMesh = FindSceneOb(_root, "leftArmMesh");
+           _rightArmMesh = FindSceneOb(_root, "rightArmMesh");
+
         }
 
         static float4x4 ModelXForm(float3 pos, float3 rot, float3 pivot)
@@ -149,11 +264,12 @@ namespace Fusee.Tutorial.Core
                 _beta  -= speed.y*0.0001f;
             }
 
-            _yawCube1 += Keyboard.ADAxis * 0.1f;
-            _pitchCube1 += Keyboard.WSAxis * 0.1f;
-            _yawCube2 += Keyboard.LeftRightAxis * 0.1f;
-            _pitchCube2 += Keyboard.UpDownAxis * 0.1f;
+            _leftArmMesh.Rot.x = _armPitchRight;
+            _rightArmMesh.Rot.x = _armPitchLeft;
 
+            // rotation controls for 
+            _armPitchLeft += Keyboard.ADAxis * 0.1f;
+            _armPitchRight += Keyboard.LeftRightAxis*0.1f;
             // Setup matrices
             var aspectRatio = Width / (float)Height;
             RC.Projection = float4x4.CreatePerspectiveFieldOfView(3.141592f * 0.25f, aspectRatio, 0.01f, 20);
