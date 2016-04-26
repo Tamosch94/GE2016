@@ -214,8 +214,6 @@ namespace Fusee.Tutorial.Core
                                             new SceneOb
                                             {
                                                 Mesh = sphere, Pos = new float3( 0, -1f, 0), ModelScale = new float3(0.25f, 0.5f, 0.25f), nameOfMesh = "leftHandMesh",
-
-
                                             }
                                         }),
                                     },
