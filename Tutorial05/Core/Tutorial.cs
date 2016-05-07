@@ -10,6 +10,14 @@ using static Fusee.Engine.Core.Input;
 
 namespace Fusee.Tutorial.Core
 {
+
+    /*
+        MANUAL FOR WUGGY:
+        WASD - move Wuggy
+        ARROWUPDOWN - translate neck updown
+        H/L - Shininess higher/ lower
+        ARROWLEFTRIGHT - rotate head left right
+    */
     class Renderer : SceneVisitor
     {
         public RenderContext RC;
@@ -118,6 +126,7 @@ namespace Fusee.Tutorial.Core
         private TransformComponent _smallWheelL;
         private TransformComponent _wuggyMesh;
         private TransformComponent _neckHiAndCamMount;
+        private TransformComponent _eyesPitch;
 
 
         //reference shininess
@@ -146,6 +155,7 @@ namespace Fusee.Tutorial.Core
             _smallWheelL = _wuggy.Children.FindNodes(n => n.Name == "WheelSmallL").First().GetTransform();
             _wuggyMesh = _wuggy.Children.FindNodes(n => n.Name == "Wuggy").First().GetTransform();
             _neckHiAndCamMount = _wuggy.Children.FindNodes(n => n.Name == "NeckHi").First().GetTransform();
+            _eyesPitch = _wuggy.Children.FindNodes(n => n.Name == "Eyes_Pitch").First().GetTransform();
             _renderer = new Renderer(RC);
 
             // Initialize the shader(s)
@@ -263,6 +273,9 @@ namespace Fusee.Tutorial.Core
             {
                 _neckHiAndCamMount.Translation.y = -30.0f;
             }
+
+            // fixed staring of head section
+            _eyesPitch.Rotation.y = _wuggyMesh.Rotation.y * -1 + (float)System.Math.Atan2(_wuggyMesh.Translation.x, _wuggyMesh.Translation.z + -4);
 
             //rotate wuggy
             float sin = 0.05f * (float)System.Math.Sin(_wuggyMesh.Rotation.y);
